@@ -81,6 +81,12 @@ class Message(object):
             return self._headerLookup[lowerKey]
         except:
             return False
+        
+    def getId(self):
+        try:
+            return self.getHeaderField("via").values[0].params["branch"]
+        except:
+            return None
     
     
 class MessageRequest(Message):

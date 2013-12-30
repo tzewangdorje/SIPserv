@@ -1,15 +1,15 @@
 class TransactionLayer(object):
     
-    def __init__(self, stateMachine):
-        self._stateMachine = stateMachine
+    def __init__(self, persistenceApi):
+        self._persistenceApi = persistenceApi
     
     def getTransaction(self, message):
-        transaction = self._stateMachine.lookup(message)
+        transaction = self._persistenceApi.lookup(message)
         if transaction:
             return transaction
         else:
             transaction = self._create(message)
-            self._stateMachine.store(transaction)
+            self._persistenceApi.store(transaction)
             return transaction
     
     def _create(self, message):
@@ -26,6 +26,7 @@ class Transaction(object):
         self.port = port
         self.protocol = protocol
         self.message = message
+        self.identifier = message.getId()
         self.state = None
         # request
         self.request = None

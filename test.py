@@ -6,15 +6,15 @@ from twisted.internet import reactor
 # sipServ
 from sipServ.factory import MessageFactory, TransactionUserFactory
 from sipServ.transaction import TransactionLayer
-from sipServ.state import StateMachine
+from sipServ.persistence import PersistenceApiMemory
 
 
 class SipProtocol(DatagramProtocol):
     
     def startProtocol(self):
-        self._stateMachine = StateMachine()
+        self._persistenceApi = PersistenceApiMemory()
         self._messageFactory = MessageFactory()
-        self._transactionLayer = TransactionLayer(self._stateMachine)
+        self._transactionLayer = TransactionLayer(self._persistenceApi)
         self._tuFactory = TransactionUserFactory(self._messageFactory)
         # hack so I can start building, but needs writing properly
         host = "127.0.0.1"
@@ -25,8 +25,7 @@ class SipProtocol(DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
         try:
             inMessage = self._messageFactory.createFromDatagram(data)
-            packet = inMessage.write()
-            print packet
+            print inMessage.write()
             transaction = self._transactionLayer.getTransaction(inMessage)
             tu = self._tuFactory.create(transaction)
             tu.process()
