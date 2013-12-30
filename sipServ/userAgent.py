@@ -4,9 +4,8 @@ from error import SipError
 
 class UserAgent(TransactionUser):
     
-    def __init__(self, message):
-        self._inMessage = message
-        self._outMessages = []
+    def __init__(self, transaction):
+        self._transaction = transaction
         self.messageFactory = None    
     
     def process(self):
@@ -16,6 +15,7 @@ class UserAgent(TransactionUser):
             self._processContent()
             self._applyExtensions()
             self._processRequest()
+            return self._transaction
         except SipError, e:
             outMessage = self._getMsgFromErr(e, self._inMessage)
             self._outMessages.append(outMessage)
@@ -51,20 +51,20 @@ class UserAgent(TransactionUser):
         pass
     
     def _processRequest(self):
-        if self._inMessage.identifier=="REGISTER":
+        if self._transaction.request.identifier=="REGISTER":
             self._register()
-        elif self._inMessage.identifier=="OPTIONS":
+        elif self._transaction.request.identifier=="OPTIONS":
             self._options()
-        elif self._inMessage.identifier=="INVITE":
+        elif self._transaction.request.identifier=="INVITE":
             self._invite()
-        elif self._inMessage.identifier=="BYE":
+        elif self._transaction.request.identifier=="BYE":
             self._bye()
         else:
             raise SipError(405, 'Method Not Allowed')
     
     def _register(self):
-        outMessage = self.messageFactory.makeResponse(200, 'OK', self._inMessage, headers=[])
-        self._outMessages.append(outMessage)
+        message = self.messageFactory.makeResponse(200, 'OK', self._transaction.request, headers=[])
+        self._transaction.addResponse(message)
     
     def _options(self):
         print "OPTIONS"

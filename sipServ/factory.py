@@ -49,12 +49,11 @@ class TransactionUserFactory(object):
     def __init__(self, messageFactory):
         self._messageFactory = messageFactory
     
-    def create(self, transaction):
-        message = transaction.message
+    def create(self, message, transaction):
         if message.isRequest():
-            userAgent = UserAgentServer(message)
+            userAgent = UserAgentServer(transaction)
         else:
-            userAgent = UserAgentClient(message)
+            userAgent = UserAgentClient(transaction)
         userAgent.messageFactory = self._messageFactory
         return userAgent
 

@@ -27,20 +27,18 @@ class SipProtocol(DatagramProtocol):
             inMessage = self._messageFactory.createFromDatagram(data)
             print inMessage.write()
             transaction = self._transactionLayer.getTransaction(inMessage)
-            tu = self._tuFactory.create(transaction)
-            tu.process()
-            for outMessage in tu.getOutMessages():
-                transaction = self._transactionLayer.getTransaction(outMessage)
-                if transaction:
-                    self._send(transaction)
+            tu = self._tuFactory.create(inMessage, transaction)
+            transaction = tu.process()
+            for outMessage in transaction.getOutMessages():
+                self._send(outMessage)
+            self._persistenceApi.store(transaction)
         except:
             print traceback.format_exc()
     
     def connectionRefused(self): # Possibly invoked if there is no server listening on the address to which we are sending.
         print "No one listening"            
     
-    def _send(self, transaction):
-        message = transaction.message
+    def _send(self, message):
         port = int(message.returnPort)
         ip = message.returnIp
         packet = message.write()

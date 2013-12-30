@@ -23,10 +23,8 @@ class PersistenceApiMemory(PersistenceApi):
             return False
         
     def store(self, transaction):
-        id = transaction.message.getId()
-        try:
-            self._store[id]
-        except KeyError:
-            self._store[id] = transaction
+        id = transaction.getId()
+        self._store[id] = transaction
+            
         
         

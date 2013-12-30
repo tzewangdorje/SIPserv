@@ -9,9 +9,11 @@ class Message(object):
     def __init__(self, data=None):
         self.indentifier = None
         self.request = None
+        self.final = None
         self.header = []
         self._headerLookup = {}
         self.body = ""
+        self.sent = False
         if data:
             self._parse(data)
         if not self._validate():
@@ -65,10 +67,16 @@ class Message(object):
         return UserAgentServer()
     
     def isRequest(self):
-        return self._request
+        return self.request
     
     def isResponse(self):
-        return not self._request
+        return not self.request
+    
+    def isProvisional(self):
+        return not self.request and not self.final
+    
+    def isFinal(self):
+        return not self.request and self.final
     
     def addHeaderField(self, headerField):
         lowerKey = headerField.name.lower()
@@ -93,7 +101,7 @@ class MessageRequest(Message):
     
     def __init__(self, data):
         Message.__init__(self, data)
-        self._request = True
+        self.request = True
     
     def getReturnIp(self):
         via = self.getHeaderField("via")
@@ -119,7 +127,7 @@ class MessageResponse(Message):
     
     def __init__(self, data):
         Message.__init__(self, data)
-        self._request = False
+        self.request = False
         self.code = ""
         self.reasonPhrase = ""
     
@@ -160,6 +168,7 @@ class MessageResponseProvisional(MessageResponse):
     def __init__(self, data=None):
         MessageResponse.__init__(self, data)
         self.identifier = "PROVISIONAL"
+        self.final = False
     
         
 class MessageResponseSuccess(MessageResponse):
@@ -167,13 +176,15 @@ class MessageResponseSuccess(MessageResponse):
     def __init__(self, data=None):
         MessageResponse.__init__(self, data)
         self.identifier = "SUCCESS"
+        self.final = True
     
         
 class MessageResponseRedirect(MessageResponse):
     
     def __init__(self, data=None):
         MessageResponse.__init__(self, data)
-        self.identifier = "REDIRECT"    
+        self.identifier = "REDIRECT"
+        self.final = True   
 
 
 class MessageResponseClientError(MessageResponse):
