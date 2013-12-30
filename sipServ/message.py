@@ -61,13 +61,6 @@ class Message(object):
     def _validate(self):
         return True
     
-    def getHeaderField(self, name):
-        lowerKey = name.lower()
-        try:
-            return self._headerLookup[lowerKey]
-        except:
-            return False
-    
     def getUserAgent(self):
         return UserAgentServer()
     
@@ -81,6 +74,13 @@ class Message(object):
         lowerKey = headerField.name.lower()
         self._headerLookup[lowerKey] = headerField
         self.header.append(headerField)
+        
+    def getHeaderField(self, name):
+        lowerKey = name.lower()
+        try:
+            return self._headerLookup[lowerKey]
+        except:
+            return False
     
     
 class MessageRequest(Message):
