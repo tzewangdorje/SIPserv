@@ -14,6 +14,7 @@ class HeaderFieldValue(object):
     
     def getParam(self, name):
         return self.params
+    
     def __repr__(self):
         if self.params:
             return self.value+": "+str(self.params)
