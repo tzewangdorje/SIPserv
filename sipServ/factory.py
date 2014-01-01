@@ -23,7 +23,7 @@ class MessageFactory(object):
         }
         
     def createFromDatagram(self, data):
-        lines = data.split("\r\n")
+        lines = data.splitlines()
         messageType = lines[0].split(" ", 1)[0]
         try:
             return self._methodHash[messageType](data)
@@ -38,9 +38,9 @@ class MessageFactory(object):
         message = self._codeHash[code[0]]()
         message.code = code
         message.reasonPhrase = reasonPhrase
-        for header in headers:
-            message.headers.append(header)
         message.configureByRequest(requestMessage)
+        for headerField in headers:
+            message.header[headerField.name] = headerField
         return message
 
     

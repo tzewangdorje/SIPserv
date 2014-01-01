@@ -1,5 +1,6 @@
 # core
-import traceback, random
+import traceback, random, re
+from collections import OrderedDict
 # sipServ
 from header import HeaderField
 from userAgent import UserAgentServer
@@ -10,8 +11,7 @@ class Message(object):
         self.indentifier = None
         self.request = None
         self.final = None
-        self.header = []
-        self._headerLookup = {}
+        self.header = OrderedDict()
         self.body = ""
         self.sent = False
         if data:
@@ -34,7 +34,7 @@ class Message(object):
     
     def write(self):
         ret = self.start_line + "\r\n"
-        for field in self.header:
+        for key,field in self.header.iteritems():
             ret = ret + field.write() + "\r\n"
         ret = ret + "\r\n"
         ret = ret + self.body
@@ -43,7 +43,7 @@ class Message(object):
     def _parse(self, data):
         headerDone = False
         start = True
-        lines = data.split("\r\n")
+        lines = data.splitlines()
         for line in lines:
             if start:
                 self.start_line = line
@@ -55,8 +55,9 @@ class Message(object):
             else:
                 headerField = HeaderField(line)
                 try:
-                    self.addHeaderField(headerField)
-                except: # this header field already exists, so add values to the existing one
+                    key = headerField.name.lower()
+                    self.header[key] = headerField
+                except: # this header field already exists, so add values to the existing one, TO DO
                     # header[hf.name].append(hf)
                     print traceback.format_exc()       
     
@@ -77,22 +78,10 @@ class Message(object):
     
     def isFinal(self):
         return not self.request and self.final
-    
-    def addHeaderField(self, headerField):
-        lowerKey = headerField.name.lower()
-        self._headerLookup[lowerKey] = headerField
-        self.header.append(headerField)
-        
-    def getHeaderField(self, name):
-        lowerKey = name.lower()
-        try:
-            return self._headerLookup[lowerKey]
-        except:
-            return False
         
     def getId(self):
         try:
-            return self.getHeaderField("via").values[0].params["branch"]
+            return self.header["via"].values[0].params["branch"]
         except:
             return None
     
@@ -102,20 +91,27 @@ class MessageRequest(Message):
     def __init__(self, data):
         Message.__init__(self, data)
         self.request = True
+        self.requestUri = self.start_line.split(" ")[1]
+        
+    @property
+    def addressOfRecord(self):
+        to = self.header["to"].values[0].value
+        m = re.search(r"<(.+)>", to)
+        return m.group(1)
     
     def getReturnIp(self):
-        via = self.getHeaderField("via")
+        via = self.header["via"]
         return via.values[0].value.split(" ")[1]
     
     def getReturnPort(self):
-        via = self.getHeaderField("via")
+        via = self.header["via"]
         if via.values[0].params["rport"].isdigit():
             return via.values[0].params["rport"]
         else:
             return "5060"
     
     def getReturnTransport(self):
-        via = self.getHeaderField("via")
+        via = self.header["via"]
         return via.values[0].value.split(" ")[0].split("/")[2]
 
 
@@ -132,21 +128,20 @@ class MessageResponse(Message):
         self.reasonPhrase = ""
     
     def configureByRequest(self, requestMessage):
-        self._requestMessage = requestMessage
-        self.returnIp = self._requestMessage.getReturnIp()
-        self.returnPort = self._requestMessage.getReturnPort()
-        self.returnTransport = self._requestMessage.getReturnTransport()
-        self.header.append( requestMessage.getHeaderField("via") )
-        toField = requestMessage.getHeaderField("to")
+        self.returnIp = requestMessage.getReturnIp()
+        self.returnPort = requestMessage.getReturnPort()
+        self.returnTransport = requestMessage.getReturnTransport()
+        self.header["via"] = requestMessage.header["via"]
+        toField = requestMessage.header["to"]
         try:
             toField.values[0].params["tag"]
         except KeyError:
             # no dialog tag yet - add one
             toField.values[0].params["tag"] = '%x' % random.randint(0,2**31)
-        self.header.append( toField )
-        self.header.append( requestMessage.getHeaderField("from") )
-        self.header.append( requestMessage.getHeaderField("call-id") )
-        self.header.append( requestMessage.getHeaderField("cseq") )
+        self.header["to"] = toField
+        self.header["from"] = requestMessage.header["from"]
+        self.header["call-id"] = requestMessage.header["call-id"]
+        self.header["cseq"] = requestMessage.header["cseq"]
 
 
 class MessageRequestRegister(MessageRequest):

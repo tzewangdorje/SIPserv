@@ -42,7 +42,7 @@ class Transaction(object):
     def addResponse(self, message):
         if message.isFinal():
             self.finals.append(message)
-        elif message.isProvisional(message):
+        elif message.isProvisional():
             self.provisionals.append(message)
             
     def addRequest(self, message):
@@ -106,8 +106,4 @@ class TransactionServerNonInvite(TransactionServer):
         # trying -> proceeding -> completed -> terminated
         TransactionServer.__init__(self, ip="127.0.0.1", port="5060", protocol="udp")
         self.state = "proceeding"
-
-
-class TransactionUser(object):
-    pass
 

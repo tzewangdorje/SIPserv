@@ -17,7 +17,7 @@ class HeaderFieldValue(object):
     
     def __repr__(self):
         if self.params:
-            return self.value+": "+str(self.params)
+            return str(self.value)+": "+str(self.params)
         else:
             return self.value
     
@@ -51,7 +51,7 @@ class HeaderField(object):
 
     
     def __repr__(self):
-        return "'"+self.name+"': "+str(self.values)
+        return self.name+": "+str(self.values)
     
     def write(self):
         ret = self.name + ": "

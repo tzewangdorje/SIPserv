@@ -48,4 +48,13 @@ class HeaderTestCase(unittest.TestCase):
         self.assertEqual("HeaderFieldValue", type(headerField.values[1]).__name__)
         self.assertEqual(0, len(headerField.values[1].params))
         
+    def test_build_header_field_with_methods(self):
+        contact = HeaderField()
+        contact.name = "Contact"
+        hfv = HeaderFieldValue()
+        hfv.value = "<sip:test@192.168.1.108>"
+        hfv.params["expires"] = "3600"
+        contact.values.append(hfv)
+        self.assertEqual(contact.write(), "Contact: <sip:test@192.168.1.108>;expires=3600")
+        
         

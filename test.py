@@ -20,11 +20,12 @@ class SipProtocol(DatagramProtocol):
         host = "127.0.0.1"
         port = 5060
         self.transport.connect(host, port)
-        print "Communicating with client on ip %s port %d" % (host, port)
+        print "Communicating with client on IP %s port %d" % (host, port)
     
     def datagramReceived(self, data, (host, port)):
         try:
             inMessage = self._messageFactory.createFromDatagram(data)
+            print ">>> IN >>>"
             print inMessage.write()
             transaction = self._transactionLayer.getTransaction(inMessage)
             tu = self._tuFactory.create(inMessage, transaction)
@@ -42,9 +43,10 @@ class SipProtocol(DatagramProtocol):
         port = int(message.returnPort)
         ip = message.returnIp
         packet = message.write()
+        print "<<< OUT <<<"
         print packet
         self.transport.write(packet, (ip, port))
 
 
-reactor.listenUDP(5061, SipProtocol())
+reactor.listenUDP(5061, SipProtocol(), interface="")
 reactor.run()
